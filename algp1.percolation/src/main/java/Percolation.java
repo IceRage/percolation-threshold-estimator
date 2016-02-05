@@ -23,15 +23,21 @@ public class Percolation {
         = "\" is invalid because it is non-positive.";
     
     
-    private int                     gridSize;   // The number of grid rows/cols
-    private int                     nrOfSites;  // The number of grid sites
-    private byte[]                  openSites;  // Array that records which 
-                                                // sites are open
-    private WeightedQuickUnionUF    unionFind;  // The union-find data type used
-                                                // to record connected sites
-
-    private boolean                 doesPercolate;  // Flag indicating if the
-                                                    // system percolates.
+    private int     gridSize;               // The number of grid rows/cols
+    private int     nrOfSites;              // The number of grid sites
+    private byte[]  openSites;              // Array that records which sites 
+                                            // are open
+    private boolean doesPercolate;          // Flag indicating if the system 
+                                            // percolates
+    
+    private WeightedQuickUnionUF topUnionFind;      // The union-find data type 
+                                                    // used to record sites 
+                                                    // connected to a virtual 
+                                                    // top site
+    private WeightedQuickUnionUF bottomUnionFind;   // The union-find data type 
+                                                    // used to record sites 
+                                                    // connected to a virtual 
+                                                    // bottom site
     
     /**
      * Construct a grid of size N x N for a percolation experiment.
@@ -67,7 +73,9 @@ public class Percolation {
         validateIndex(i);
         validateIndex(j);
         
-        return isValidSiteOpen(i - 1, j - 1);
+        int siteIndex = getSiteIndex(i - 1, j - 1);
+        
+        return isValidSiteOpen(siteIndex);
     }
     
     /**
@@ -80,7 +88,9 @@ public class Percolation {
         validateIndex(i);
         validateIndex(j);
         
-        return unionFind.connected(0, getSiteIndex(i - 1, j - 1) + 1);
+        int siteIndex = getSiteIndex(i - 1, j - 1) + 1;
+        
+        return isValidSiteFull(siteIndex);
     }
     
     /**
@@ -89,11 +99,7 @@ public class Percolation {
      * @return True if the system percolates, false otherwise.
      */
     public boolean percolates() {
-        if (gridSize > 1) {
-            return unionFind.connected(0, nrOfSites + 1);
-        } else {
-            return isOpen(1, 1);
-        }
+        return doesPercolate;
     }
     
     /**
@@ -117,23 +123,25 @@ public class Percolation {
      * @param gridSize The grid size.
      */
     private void initialize(int gridSize) {
-        this.gridSize       = gridSize;
-        this.nrOfSites      = (gridSize * gridSize);
-        this.openSites      = new byte[(nrOfSites / 8) + 1];
-        this.doesPercolate  = false;
-        
-        // The union-find data type additionally contains a virtual top site
-        this.unionFind  = new WeightedQuickUnionUF(nrOfSites + 1);
+        this.gridSize           = gridSize;
+        this.nrOfSites          = (gridSize * gridSize);
+        this.openSites          = new byte[(nrOfSites / 8) + 1];
+        this.doesPercolate      = false;
+        this.topUnionFind       = new WeightedQuickUnionUF(nrOfSites + 2);
+        this.bottomUnionFind    = new WeightedQuickUnionUF(nrOfSites + 2);
         
         connectVirtualSitesToNeighbouringSites();
     }
     
     /**
-     * Connect the virtual top site to the neighbouring sites.
+     * Connect the virtual sites to the neighbouring sites.
      */
     private void connectVirtualSitesToNeighbouringSites() {
+        int lastSiteIndex = nrOfSites + 1;
+        
         for (int i = 0; i < gridSize; ++i) {
-            unionFind.union(0, i + 1);
+            topUnionFind.union(0, i + 1);
+            bottomUnionFind.union(lastSiteIndex, nrOfSites - i);
         }
     }
 
@@ -162,74 +170,78 @@ public class Percolation {
      * @param j The column index.
      */
     private void openValidSite(int i, int j) {
-        if (!isValidSiteOpen(i, j)) {
-            int validSiteIndex = getSiteIndex(i, j);
-
-            setSiteState(validSiteIndex, true);
+        int validSiteIndex = getSiteIndex(i, j);
+        
+        if (!isValidSiteOpen(validSiteIndex)) {
+            setSiteOpenState(validSiteIndex, true);
             
             tryConnect(validSiteIndex, i - 1, j);
             tryConnect(validSiteIndex, i + 1, j);
             tryConnect(validSiteIndex, i, j - 1);
             tryConnect(validSiteIndex, i, j + 1);
+            
+            updatePercolationStatus(validSiteIndex);
         }
     }
 
     /**
      * Connect the site corresponding to index with the site (i, j) if site 
-     * (i, j) is open. If the given site index corresponds to a site on the
-     * bottom row of the system then connect the site with the virtual bottom
-     * site.
-     * 
-     * The indices i and j have values between 0 and N - 1.
+     * (i, j) exists and is open. 
      * 
      * @param index The site index.
      * @param i     The row index for the other site.
      * @param j     The column index for the other site.
      */
     private void tryConnect(int index, int i, int j) {
+        if ((i < 0) || (i >= gridSize)) return;
+        if ((j < 0) || (j >= gridSize)) return;
+        
+        int siteIndex = getSiteIndex(i, j);
+        
         // Try to connect given site with site (i, j)
-        if (isSiteOpen(i, j)) {
-            unionFind.union(index + 1, getSiteIndex(i, j) + 1);
+        if (isValidSiteOpen(siteIndex)) {
+            topUnionFind.union(index + 1, siteIndex + 1);
+            bottomUnionFind.union(index + 1, siteIndex + 1);
         }
     }
 
     /**
-     * Check if the site (i, j) is open.
-     * 
-     * @param i The row index.
-     * @param j The column index.
-     * @return  True if i and j are between 0 and N - 1 and the (i, j)-th site
-     *          is open, false otherwise.
-     */
-    private boolean isSiteOpen(int i, int j) {
-        if ((i < 0) || (i >= gridSize)) return false;
-        if ((j < 0) || (j >= gridSize)) return false;
-        
-        return isValidSiteOpen(i, j);
-    }
-    
-    /**
-     * Check if the site (i, j) is open.
+     * Check if the site corresponding to index is open.
      *
-     * The indices i and j have values between 0 and N - 1.
-     * 
-     * @param i The row index.
-     * @param j The column index.
-     * @return  True if the (i, j)-th site is open, false otherwise.
+     * @param index The site index.
+     * @return True if the site corresponding to index is open, false otherwise.
      */
-    private boolean isValidSiteOpen(int i, int j) {
-        int siteIndex = getSiteIndex(i , j);
-        
-        return ((openSites[siteIndex / 8] & (1 << (siteIndex % 8))) != 0);
+    private boolean isValidSiteOpen(int index) {
+        return (getSiteOpenState(index) == true);
     }
     
     /**
-     * Set the state of the site corresponding to the given index.
+     * Check if the site corresponding to index is full.
+     * 
+     * @param index The site index.
+     * @return True if the site corresponding to index is full, false otherwise.
+     */
+    private boolean isValidSiteFull(int index) {
+        return topUnionFind.connected(0, index);
+    }
+    
+    /**
+     * Get the open state of the site corresponding to the given index.
+     * 
+     * @param index The site index.
+     * @return The open state corresponding to the given index.
+     */
+    private boolean getSiteOpenState(int index) {
+        return ((openSites[index / 8] & (1 << (index % 8))) != 0);
+    }
+    
+    /**
+     * Set the open state of the site corresponding to the given index.
      * 
      * @param index The site index.
      * @param value The new site state value.
      */
-    private void setSiteState(int index, boolean value) {
+    private void setSiteOpenState(int index, boolean value) {
         if (value == true) {
             openSites[index / 8] |= (1 << (index % 8));
         } else {
@@ -248,6 +260,33 @@ public class Percolation {
      */
     private int getSiteIndex(int i, int j) {
         return (i * gridSize) + j;
+    }
+    
+    /**
+     * Set the percolation status to true if the given site is full and is
+     * connected to the bottom.
+     * 
+     * @param index The site index.
+     */
+    private void updatePercolationStatus(int index) {
+        if (doesPercolate == false) {
+            doesPercolate = (
+                isValidSiteFull(index + 1) &&
+                isValidSiteConnectedToBottom(index + 1)
+            );
+        }
+    }
+
+    /**
+     * Check if the site corresponding to the given index is connected to the 
+     * bottom grid row.
+     * 
+     * @param index The site index.
+     * @return True if the site corresponding to the given index is connected to
+     *         the bottom grid row, false otherwise.
+     */
+    private boolean isValidSiteConnectedToBottom(int index) {
+        return bottomUnionFind.connected(index, nrOfSites + 1);
     }
     
 }

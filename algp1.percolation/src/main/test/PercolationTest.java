@@ -221,7 +221,7 @@ public class PercolationTest {
     @Test
     public void testDoesNotPercolatePerformanceTest() {
         int colIndex    = 0;
-        int newGridSize = GRID_SIZE * 2000;
+        int newGridSize = GRID_SIZE * 200;
         
         percolation = new Percolation(newGridSize);
         
@@ -239,7 +239,7 @@ public class PercolationTest {
     @Test
     public void testPercolatesPerformanceTest() {
         int colIndex    = 0;
-        int newGridSize = GRID_SIZE * 2000;
+        int newGridSize = GRID_SIZE * 200;
         
         percolation = new Percolation(newGridSize);
         
