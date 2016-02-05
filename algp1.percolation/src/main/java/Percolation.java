@@ -106,8 +106,11 @@ public class Percolation {
      * Check if the given grid size is positive.
      * 
      * @param gridSize  The grid size.
+     * @throws IllegalArgumentException if grid size is non-positive.
      */
-    private void validateGridSize(int gridSize) {
+    private void validateGridSize(
+        int gridSize
+    ) throws IllegalArgumentException {
         if (gridSize <= 0) {
             throw new IllegalArgumentException(
                 ERR_INVALID_GRID_SIZE_BEGIN +
@@ -149,8 +152,9 @@ public class Percolation {
      * Check if the given index is between 1 and N.
      * 
      * @param index The index.
+     * @throws IndexOutOfBoundsException if index < 1 or index > N.
      */
-    private void validateIndex(int index) {
+    private void validateIndex(int index) throws IndexOutOfBoundsException {
         if ((index < 1) || (index > gridSize)) {
             throw new IndexOutOfBoundsException(
                  ERR_INVALID_INDEX_BEGIN + 
