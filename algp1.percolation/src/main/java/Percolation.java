@@ -105,16 +105,14 @@ public class Percolation {
     /**
      * Check if the given grid size is positive.
      * 
-     * @param gridSize  The grid size.
+     * @param size  The grid size.
      * @throws IllegalArgumentException if grid size is non-positive.
      */
-    private void validateGridSize(
-        int gridSize
-    ) throws IllegalArgumentException {
-        if (gridSize <= 0) {
+    private void validateGridSize(int size) throws IllegalArgumentException {
+        if (size <= 0) {
             throw new IllegalArgumentException(
                 ERR_INVALID_GRID_SIZE_BEGIN +
-                gridSize +
+                size +
                 ERR_INVALID_GRID_SIZE_END
             );
         }
@@ -123,11 +121,11 @@ public class Percolation {
     /**
      * Initialization function.
      * 
-     * @param gridSize The grid size.
+     * @param givenGridSize The grid size.
      */
-    private void initialize(int gridSize) {
-        this.gridSize           = gridSize;
-        this.nrOfSites          = (gridSize * gridSize);
+    private void initialize(int givenGridSize) {
+        this.gridSize           = givenGridSize;
+        this.nrOfSites          = (givenGridSize * givenGridSize);
         this.openSites          = new byte[(nrOfSites / 8) + 1];
         this.doesPercolate      = false;
         this.topUnionFind       = new WeightedQuickUnionUF(nrOfSites + 2);
@@ -216,7 +214,7 @@ public class Percolation {
      * @return True if the site corresponding to index is open, false otherwise.
      */
     private boolean isValidSiteOpen(int index) {
-        return (getSiteOpenState(index) == true);
+        return getSiteOpenState(index);
     }
     
     /**
@@ -246,7 +244,7 @@ public class Percolation {
      * @param value The new site state value.
      */
     private void setSiteOpenState(int index, boolean value) {
-        if (value == true) {
+        if (value) {
             openSites[index / 8] |= (1 << (index % 8));
         } else {
             openSites[index / 8] &= (~(1 << (index % 8)));
@@ -273,7 +271,7 @@ public class Percolation {
      * @param index The site index.
      */
     private void updatePercolationStatus(int index) {
-        if (doesPercolate == false) {
+        if (!doesPercolate) {
             doesPercolate = (
                 isValidSiteFull(index + 1) &&
                 isValidSiteConnectedToBottom(index + 1)

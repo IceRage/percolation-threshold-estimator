@@ -101,16 +101,14 @@ public class PercolationStats {
     /**
      * Check if the grid size is positive.
      * 
-     * @param gridSize The grid size.
+     * @param size The grid size.
      * @throws IllegalArgumentException if the grid size is non-positive.
      */
-    private void validateGridSize(
-        int gridSize
-    ) throws IllegalArgumentException {
-        if (gridSize <= 0) {
+    private void validateGridSize(int size) throws IllegalArgumentException {
+        if (size <= 0) {
             throw new IllegalArgumentException(
                 ERR_INVALID_GRID_SIZE_BEGIN +
-                gridSize +
+                size +
                 ERR_INVALID_GRID_SIZE_END
             );
         }
@@ -119,17 +117,17 @@ public class PercolationStats {
     /**
      * Check if the number of Monte Carlo simulations is positive.
      * 
-     * @param nrOfMonteCarloSimulations The number of Monte Carlo simulations.
+     * @param nrOfSimulations The number of Monte Carlo simulations.
      * @throws IllegalArgumentException if the number of Monte Carlo simulations
      *         is non-positive.
      */
     private void validateNrOfMonteCarloSimulations(
-        int nrOfMonteCarloSimulations
+        int nrOfSimulations
     ) throws IllegalArgumentException {
-        if (nrOfMonteCarloSimulations <= 0) {
+        if (nrOfSimulations <= 0) {
             throw new IllegalArgumentException(
                 ERR_INVALID_NR_MONTE_CARLO_SIMULATIONS_BEGIN +
-                nrOfMonteCarloSimulations +
+                nrOfSimulations +
                 ERR_INVALID_NR_MONTE_CARLO_SIMULATIONS_END
             );
         }
